@@ -1,7 +1,13 @@
+import {Routes, Route} from 'react-router-dom';
+import About from './Pages/About/About';
+
+
 export default function App() {
   return (
-    <h1 className="text-4xl text-red-500 font-bold text-center mt-10">
-      Tailwind Working 🎉
-    </h1>
+    <>
+      <Routes>
+        <Route path='/about-us' element={<About />} />
+      </Routes>
+    </>
   );
 }
