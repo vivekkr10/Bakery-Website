@@ -10,7 +10,7 @@ const BenefitBread = () => {
 
       <div className='grid grid-cols-3 gap-2 mt-15 benefitBread'>
         {/* LEFT COLUMN */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-7">
           <div className='p-5 rounded-lg bg-[#fff0dd] text-start'>
             <h3 className="text-xl font-semibold mb-2 style">{benefitBreadPoints[0].title}</h3>
             <p>{benefitBreadPoints[0].description}</p>
@@ -26,7 +26,7 @@ const BenefitBread = () => {
         </div>
 
         {/* MIDDLE COLUMN (Full Height Image) */}
-        <div>
+        <div className='flex justify-center'>
           <img
             src={bread}
             className="w-full h-full object-cover object-center"
@@ -34,7 +34,7 @@ const BenefitBread = () => {
         </div>
 
         {/* RIGHT COLUMN */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-7">
           <div className='p-5 rounded-lg bg-[#fff0dd] text-start'>
             <h3 className="text-xl font-semibold mb-2 style">{benefitBreadPoints[3].title}</h3>
             <p>{benefitBreadPoints[3].description}</p>

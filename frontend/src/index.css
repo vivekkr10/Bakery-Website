@@ -26,6 +26,22 @@
   transform: translateY(0%);
 }
 
+/* Media Queries of benefit of Bread */
+@media (max-width: 1258px) {
+    .benefitBread{
+        grid-template-columns: 1fr;
+    }
+
+    .benefitBread img{
+       height: auto;
+       width: 60%;
+    }
+
+    .benefitBread > div:last-child{
+        margin-top: 50px;
+    }
+}
+
 
 /* Media Queries of chefCards */
 @media (max-width: 1150px) and (min-width: 1024px){
@@ -46,7 +62,7 @@
 
 /* Media Queries of image gallery */
 @media(max-width: 600px){
-    .imageGallery, .benefitBread{
+    .imageGallery{
         grid-template-columns: repeat(1, 1fr);
     }
     .imageCard{
