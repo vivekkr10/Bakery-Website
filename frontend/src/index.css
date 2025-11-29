@@ -1,3 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100..900&display=swap');
+
+@import "tailwindcss";
+
+.style{
+    font-family: "Roboto Slab", serif;
+}
+
+.yellow-circle {
+    width: 80px;
+    height: 80px; 
+    background-color: #ffbe00;
+    border-radius: 50%;
+    display: block;
+    box-shadow: 0 0 50px 20px rgba(255, 255, 0, 1.5);
+}
+
+
+/* Slide-up hover effect */
+.slide-up {
+  transform: translateY(100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.group:hover .slide-up {
+  transform: translateY(0%);
+}
+
+/* Media Queries of benefit of Bread */
+@media (max-width: 1258px) {
+    .benefitBread{
+        grid-template-columns: 1fr;
+    }
+
+    .benefitBread img{
+       height: auto;
+       width: 60%;
+    }
+
+    .benefitBread > div:last-child{
+        margin-top: 50px;
+    }
+}
+
+
+/* Media Queries of chefCards */
+@media (max-width: 1150px) and (min-width: 1024px){
+    .chefCards{
+        margin-left: 50px;
+        margin-right: 50px;
+    }
+}
+
+
+/* Media Queries of circle */
+@media(max-width: 768px){
+    .yellow-circle{
+        display: none;
+    }
+}
+
+
+/* Media Queries of image gallery */
+@media(max-width: 600px){
+    .imageGallery{
+        grid-template-columns: repeat(1, 1fr);
+    }
+    .imageCard{
+        height: 290px;
+    }
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
