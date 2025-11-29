@@ -1,7 +1,7 @@
-import chef1 from './chef.jpeg';
-import chef2 from './chef2.jpeg';
-import chef3 from './chef3.jpg';
-import chef4 from './chef4.jpg';
+import chef1 from './about/chef.jpeg';
+import chef2 from './about/chef2.jpeg';
+import chef3 from './about/chef3.jpg';
+import chef4 from './about/chef4.jpg';
 
 // this card is showcase chef image and some description along with opening hours
 export const card = [
@@ -55,19 +55,19 @@ export const card = [
 // Image Gallery Images
 export const images = [
     { src: "https://img.freepik.com/premium-photo/gourmet-cooking-showcase-chef-sunlit-modern-kitchen_1328214-5707.jpg", 
-      label: "Image One" 
+      label: "Our chefs blend creativity with precision, crafting every pastry with passion and expertise in a warm, modern kitchen." 
     },
     { src: "https://img.freepik.com/premium-photo/chef-cooking-beautiful-modern-kitchen-generative-ai_7023-166739.jpg", 
-      label: "Image Two" 
+      label: "Led by skilled culinary artisans, our bakery team brings together fresh ingredients and refined technique to create unforgettable flavors." 
     },
     { src: "https://img.freepik.com/free-photo/chef-restaurant-kitchen_23-2151949248.jpg", 
-      label: "Center Image" 
+      label: "From mixing bowls to oven racks, our chefs pour dedication into every recipe, ensuring each treat is beautifully made and delicious." 
     },
-    { src: "https://img.freepik.com/premium-photo/woman-industrial-kitchen_1377152-6704.jpg", 
-      label: "Image Four" 
+    { src: "https://img.freepik.com/premium-photo/set-with-bakery-rolling-pin-knife_926199-2635358.jpg", 
+      label: "Our expert chefs work in a state-of-the-art kitchen, combining tradition and innovation to bake pastries that delight every guest." 
     },
     { src: "https://img.freepik.com/premium-photo/chef-standing-commercial-kitchen_116317-43981.jpg", 
-      label: "Image Five" 
+      label: "With years of experience and a love for baking, our chefs handcraft every item to perfection, bringing warmth and artistry to our bakery." 
     },
 ];
 

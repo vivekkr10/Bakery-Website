@@ -1,74 +1,67 @@
-import React, { useState } from "react";
-import { card } from "../../assets/aboutUs/assets";
+import React, { useState, useEffect } from "react";
+import { card } from "../../assets/assets";
 import Title from "./Title";
-import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 
 const ChefCards = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [animate, setAnimate] = useState(false);
 
-  const handlePrev = () => {
-    setCurrentIndex((prevIndex) =>
-      prevIndex === 0 ? card.length - 1 : prevIndex - 1
-    );
-  };
+  // Auto slide infinite
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAnimate(true);
 
-  const handleNext = () => {
-    setCurrentIndex((prevIndex) =>
-      prevIndex === card.length - 1 ? 0 : prevIndex + 1
-    );
-  };
+      setTimeout(() => {
+        setCurrentIndex((prev) =>
+          prev === card.length - 1 ? 0 : prev + 1
+        );
+        setAnimate(false);
+      }, 300); // match animation timing
+    }, 3000); // slide every 3 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   const currentCard = card[currentIndex];
 
   return (
-    <>
-      <div className="flex flex-col lg:flex-row md:m-10 lg:m-0 items-center justify-center gap-5 transition-all duration-500 ease-in-out relative chefCards">
-        {/* Left Button */}
-        <button
-          onClick={handlePrev}
-          className="absolute left-2 sm:left-5 md:left-0 transform -translate-x-1/2 top-1/2 bg-[#dfa26d] text-white p-2 rounded-[50%] shadow-lg focus:outline-none cursor-pointer hover:bg-[#f19b50]"
-        >
-          <MdKeyboardArrowLeft className="text-3xl" />
-        </button>
+    <div className="flex flex-col lg:flex-row md:m-10 lg:m-0 items-center justify-center gap-5 relative">
 
-        <img
-          className="max-w-xl rounded-xl h-auto w-[90%] sm:w-full object-cover object-center"
-          src={currentCard.image}
-          alt="Card image"
-        />
-        
-        <div className="px-5 rounded-xl py-10 sm:mx-15 md:mx-0">
-          {/* Title and Subtitle */}
-          <div className="text-center sm:text-start">
-            <Title
-              title={currentCard.title}
-              subTitle={currentCard.description}
-            />
-          </div>
+      {/* Image */}
+      <img
+        src={currentCard.image}
+        alt="Card image"
+        className={`max-w-lg rounded-xl w-[90%] sm:w-full object-cover transition-all duration-300 ease-in-out 
+        ${animate ? "opacity-0 translate-x-5" : "opacity-100 translate-x-0"}`}
+      />
 
-          <div className="flex flex-col gap-5 mt-6">
-            {/* Timing of opening and closing */}
-            <h2 className="text-xl font-extrabold text-[#091e2e] style">{currentCard.heading}</h2>
-            {currentCard.timings.map((timing, index) => (
-              <div key={index} className="flex justify-between text-[12px] sm:text-[16px]">
-                <span className="font-small">{timing.day}</span>
-                <span className="text-[#604a4c]">{timing.time}</span>
-              </div>
-            ))}
-          </div>
+      {/* Right Card Info */}
+      <div
+        className={`px-5 rounded-xl py-10 transition-all duration-300 ease-in-out 
+        ${animate ? "opacity-0 translate-x-5" : "opacity-100 translate-x-0"}`}
+      >
+        <div className="text-center sm:text-start">
+          <Title title={currentCard.title} subTitle={currentCard.description} />
         </div>
 
-        {/* <div className="yellow-circle absolute -right-5 top-15 blur-xl"></div> */}
-        
-        {/* Right Button */}
-        <button
-          onClick={handleNext}
-          className="absolute right-2 sm:right-5 md:right-0 transform translate-x-1/2 top-1/2 bg-[#dfa26d] text-white p-2 rounded-full shadow-lg focus:outline-none cursor-pointer hover:bg-[#f19b50]"
-        >
-          <MdKeyboardArrowRight className="text-3xl" />
-        </button>
+        <div className="flex flex-col gap-5 mt-6">
+          <h2 className="text-xl font-extrabold text-[#091e2e]">
+            {currentCard.heading}
+          </h2>
+
+          {currentCard.timings.map((timing, index) => (
+            <div
+              key={index}
+              className="flex justify-between text-sm sm:text-lg"
+            >
+              <span>{timing.day}</span>
+              <span className="text-[#604a4c]">{timing.time}</span>
+            </div>
+          ))}
+        </div>
       </div>
-    </>
+
+    </div>
   );
 };
 

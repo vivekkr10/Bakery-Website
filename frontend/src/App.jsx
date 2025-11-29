@@ -4,16 +4,15 @@ import MainLayout from "./components/layout/MainLayout";
 import AuthLayout from "./components/layout/AuthLayout";
 
 import Homepage from "./components/homePage/Homepage";
-import About from "./components/about/About";
+import About from "./components/About/About";
 
 import Register from "./components/auth/Register";
 import VerifyOTP from "./components/auth/VerifyOTP";
 import SetUsername from "./components/auth/SetUsername";
-import Login from "./Login";
+import Login from "./components/auth/Login";
 
 export default function App() {
   return (
-    <BrowserRouter>
       <Routes>
 
         {/* Default route → Homepage */}
@@ -75,6 +74,5 @@ export default function App() {
         />
 
       </Routes>
-    </BrowserRouter>
   );
 }

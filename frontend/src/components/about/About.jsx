@@ -9,7 +9,7 @@ const About = () => {
     <div className='bg-[#fff9f4]'>
       <div className="relative w-full h-[65vh] overflow-hidden">
         <img
-          src={"https://img.freepik.com/free-photo/delicious-pastry-concept-with-copy-space_23-2148648840.jpg"}
+          src="https://img.freepik.com/premium-photo/sign-that-says-breads-it_1304147-112710.jpg"
           className="w-full h-full object-cover object-center"
         />
 
@@ -19,8 +19,8 @@ const About = () => {
         {/* Centered text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-5">
           <h1 className="text-5xl sm:text-8xl font-bold mb-4 text-[#091e2e] style">About Us</h1>
-          <p className="max-w-2xl sm:text-lg text-[12px] leading-relaxed">
-           At Graphura, we’re not just about baking; we’re about crafting moments of pure joy and indulgence. Since 1985, our mission has been to delight the people of Indore with exceptional baked goods made with passion and creativity.
+          <p className="max-w-2xl sm:text-xl text-[12px] leading-relaxed font-bold">
+           At Graphura, we’re not just about baking; we’re about crafting moments of pure joy and indulgence. Our mission has been to delight the people of Indore with exceptional baked goods made with passion and creativity.
           </p>
         </div>
       </div>

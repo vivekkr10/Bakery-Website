@@ -1,5 +1,5 @@
 import React from 'react'
-import { images } from '../../assets/aboutUs/assets'
+import { images } from '../../assets/assets'
 import ImageCard from './ImageCard'
 
 const ImageGallery = () => {
