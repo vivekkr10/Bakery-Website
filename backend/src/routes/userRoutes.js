@@ -135,4 +135,147 @@ router.patch("/add-money", protect, async (req, res) => {
   }
 });
 
+
+// DELETE USER ACCOUNT
+
+router.delete("/delete-account", protect, async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Account deleted successfully"
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+
+// ADD ADDRESS
+
+router.post("/add-address", protect, async (req, res) => {
+  try {
+    const { addressLine, city, state, pincode, country } = req.body;
+
+    if (!addressLine || !city || !state || !pincode)
+      return res.status(400).json({ message: "All address fields required" });
+
+    const user = await User.findById(req.user.id);
+
+    const newAddress = {
+      addressLine,
+      city,
+      state,
+      pincode,
+      country: country || "India"
+    };
+
+    user.addresses = user.addresses || [];
+    user.addresses.push(newAddress);
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Address added successfully",
+      addresses: user.addresses
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+
+// UPDATE ADDRESS
+
+router.put("/update-address/:addressId", protect, async (req, res) => {
+  try {
+    const { addressId } = req.params;
+    const { addressLine, city, state, pincode, country } = req.body;
+
+    const user = await User.findById(req.user.id);
+
+    const address = user.addresses.id(addressId);
+    if (!address) {
+      return res.status(404).json({ message: "Address not found" });
+    }
+
+    address.addressLine = addressLine || address.addressLine;
+    address.city = city || address.city;
+    address.state = state || address.state;
+    address.pincode = pincode || address.pincode;
+    address.country = country || address.country;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Address updated successfully",
+      address
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+
+// ADD PHONE NUMBER
+
+router.patch("/add-phone", protect, async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({ message: "Phone number required" });
+    }
+
+    const user = await User.findById(req.user.id);
+    user.phone = phone;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Phone number updated successfully",
+      phone: user.phone
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+
+// REMOVE PROFILE PICTURE
+
+router.delete("/remove-profile-pic", protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user.profilePic) {
+      return res.status(400).json({ message: "No profile picture to remove" });
+    }
+
+    // Delete from folder
+    if (fs.existsSync(user.profilePic)) {
+      fs.unlinkSync(user.profilePic);
+    }
+
+    // Remove from database
+    user.profilePic = null;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Profile picture removed successfully"
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+
 module.exports = router;
