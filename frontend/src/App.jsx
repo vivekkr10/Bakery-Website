@@ -5,13 +5,14 @@ import AuthLayout from "./components/layout/AuthLayout";
 
 import Homepage from "./components/homePage/Homepage";
 import About from "./components/About/About";
-
 import Register from "./components/auth/Register";
 import VerifyOTP from "./components/auth/VerifyOTP";
 import SetUsername from "./components/auth/SetUsername";
 import Login from "./components/auth/Login";
+
 import ContactUs from "./components/ContactUs";
 import ForgetPassword from "./components/auth/ForgetPassword";
+import ResetPassword from "./components/auth/ResetPassword";
 
 export default function App() {
   return (
@@ -90,6 +91,19 @@ export default function App() {
           </AuthLayout>
         }
       />
+
+
+  <Route
+        path="/reset-password"
+        element={
+          <AuthLayout>
+            <ResetPassword/>
+          </AuthLayout>
+        }
+      />
+
+
+
     </Routes>
   );
 }
