@@ -1,52 +1,73 @@
-import React from "react";
+import React, { useState } from "react";
 import axios from "axios";
-import { useState } from "react";
 import { useNavigate, NavLink } from "react-router-dom";
 import "boxicons/css/boxicons.min.css";
+import { toast } from "react-hot-toast";
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     password: "",
   });
 
+  const navigate = useNavigate();
+
+  // Toggle Password
   const togglePasswordVisibility = () => {
-    setShowPassword((prev) => !prev);
+    setShowPassword(!showPassword);
   };
 
-  const navigate = useNavigate();
+  // Handle Input Change
   const handleChange = (e) => {
-    const { name, value } = e.target; 
+    const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle Form Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Basic Validation
+    if (!formData.name || !formData.email || !formData.phone || !formData.password) {
+      toast.error("All fields are required");
+      return;
+    }
+
+    if (formData.phone.length !== 10) {
+      toast.error("Phone number must be 10 digits");
+      return;
+    }
+
     setLoading(true);
+
     try {
-      const response = await axios.post(
-        `http://localhost:5000/api/auth/register`,
+      const res = await axios.post(
+        "http://localhost:5000/api/auth/register",
         formData
       );
+
+      toast.success("OTP sent to your email!");
+
+      // Store temporary info for OTP page
       localStorage.setItem("userInfo", JSON.stringify(formData));
-      console.error("Otp sent:", response.data.message);
+
       navigate("/verify-otp");
     } catch (error) {
-      console.error(
-        "Registration failed: ",
-        error.response?.data?.message || error.message
-      );
-      setError(error.response?.data?.message || "Something went wrong");
+      const msg = error.response?.data?.message || "Registration failed";
+      toast.error(msg);
     }
+
+    setLoading(false);
   };
+
   return (
     <div className="min-h-screen flex justify-center items-center bg-[#fff9f4] px-4">
       <form
-        id="register-form"
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-xl shadow-md w-full max-w-md"
       >
@@ -54,68 +75,71 @@ const Register = () => {
           Create Account
         </h1>
 
-        {error && (
-          <p className="mb-4 text-red-600 text-center font-medium">{error}</p>
-        )}
-
-        {/* Full Name */}
+        {/* Name */}
         <div className="mb-4">
-          <label
-            htmlFor="name"
-            className="block text-gray-700 font-medium mb-1"
-          >
+          <label className="block text-gray-700 font-medium mb-1">
             Full Name
           </label>
           <input
             type="text"
             name="name"
-            id="name"
+            required
             value={formData.name}
             onChange={handleChange}
-            className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#dfa26d] outline-none transition"
+            className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#dfa26d] outline-none"
+            placeholder="Enter full name"
           />
         </div>
 
         {/* Email */}
         <div className="mb-4">
-          <label
-            htmlFor="email"
-            className="block text-gray-700 font-medium mb-1"
-          >
-            Email
+          <label className="block text-gray-700 font-medium mb-1">
+            Email Address
           </label>
           <input
             type="email"
             name="email"
-            id="email"
+            required
             value={formData.email}
             onChange={handleChange}
-            className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#dfa26d] outline-none transition"
+            className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#dfa26d] outline-none"
+            placeholder="example@mail.com"
+          />
+        </div>
+
+        {/* Phone */}
+        <div className="mb-4">
+          <label className="block text-gray-700 font-medium mb-1">
+            Phone Number
+          </label>
+          <input
+            type="number"
+            name="phone"
+            required
+            value={formData.phone}
+            onChange={handleChange}
+            className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#dfa26d] outline-none"
+            placeholder="10-digit phone number"
           />
         </div>
 
         {/* Password */}
         <div className="mb-4">
-          <label
-            htmlFor="password"
-            className="block text-gray-700 font-medium mb-1"
-          >
+          <label className="block text-gray-700 font-medium mb-1">
             Password
           </label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
-              id="password"
               name="password"
+              required
               value={formData.password}
               onChange={handleChange}
-              required
-              className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#dfa26d] outline-none transition"
+              className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#dfa26d] outline-none"
+              placeholder="Enter password"
             />
             <i
-              className={`bx ${
-                showPassword ? "bx-hide" : "bx-show"
-              } absolute right-3 top-3.5 text-xl text-gray-600 cursor-pointer`}
+              className={`bx ${showPassword ? "bx-hide" : "bx-show"} absolute right-3 top-3.5 text-xl text-gray-600 cursor-pointer`}
               onClick={togglePasswordVisibility}
             ></i>
           </div>
@@ -123,7 +147,6 @@ const Register = () => {
 
         {/* Submit Button */}
         <button
-          id="registerBtn"
           type="submit"
           disabled={loading}
           className="w-full bg-[#dfa26d] text-white font-semibold py-3 rounded-lg shadow-md hover:bg-[#e6b07c] transition-all duration-300 disabled:opacity-60"
@@ -141,10 +164,7 @@ const Register = () => {
         {/* Login Link */}
         <p className="text-center text-sm text-gray-600 mt-4">
           Already have an account?{" "}
-          <NavLink
-            to="/login"
-            className="text-[#c85a32] font-semibold hover:underline"
-          >
+          <NavLink to="/login" className="text-[#c85a32] font-semibold hover:underline">
             Login here
           </NavLink>
         </p>
