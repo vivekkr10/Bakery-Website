@@ -18,7 +18,6 @@ const adminMiddleware = require("../middlewares/adminMiddleware");
 
 /* ============================
    PUBLIC ROUTES
-============================ */
 
 // GET ALL PRODUCTS
 router.get("/all-products", getAllProducts);
@@ -28,7 +27,6 @@ router.get("/single/:id", getProduct);
 
 /* ============================
    ADMIN ROUTES
-============================ */
 
 // CREATE PRODUCT  (with multer)
 router.post("/create", adminMiddleware, upload.array("images"), createProduct);

@@ -144,9 +144,7 @@ const Register = () => {
               placeholder="Enter password"
             />
             <i
-              className={`bx ${
-                showPassword ? "bx-hide" : "bx-show"
-              } absolute right-3 top-3.5 text-xl text-gray-600 cursor-pointer`}
+              className={`bx ${showPassword ? "bx-hide" : "bx-show"} absolute right-3 top-3.5 text-xl text-gray-600 cursor-pointer`}
               onClick={togglePasswordVisibility}
             ></i>
           </div>
@@ -171,10 +169,7 @@ const Register = () => {
         {/* Login Link */}
         <p className="text-center text-sm text-gray-600 mt-4">
           Already have an account?{" "}
-          <NavLink
-            to="/login"
-            className="text-[#c85a32] font-semibold hover:underline"
-          >
+          <NavLink to="/login" className="text-[#c85a32] font-semibold hover:underline">
             Login here
           </NavLink>
         </p>
