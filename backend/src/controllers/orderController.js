@@ -184,6 +184,7 @@ exports.createOrder = async (req, res) => {
           amount: Math.round(grandTotal * 100), // Convert to paise
           currency: "INR",
           receipt: `receipt_${Date.now()}_${userId.toString().slice(-6)}`,
+          payment_capture: 1, // Auto capture payment
         });
         console.log(`✅ Razorpay order created: ${razorpayOrder.id}`);
       } catch (razorpayError) {
@@ -241,13 +242,11 @@ exports.createOrder = async (req, res) => {
 ===================================================== */
 exports.createSimpleOrder = async (req, res) => {
   try {
-    console.log("🔍 CREATE SIMPLE ORDER REQUEST (for static data):");
-    console.log("User:", req.user);
-
+    console.log("📦 CREATE SIMPLE ORDER REQUEST");
     const { items, shippingAddress, paymentMethod } = req.body;
 
-    // Check if user is authenticated
     if (!req.user || !req.user._id) {
+      console.error("❌ No user found in request");
       return res.status(401).json({
         success: false,
         message: "User not authenticated",
@@ -255,19 +254,13 @@ exports.createSimpleOrder = async (req, res) => {
     }
 
     const userId = req.user._id;
+    console.log("👤 User ID:", userId);
 
     if (!items || !items.length) {
+      console.error("❌ No items in cart");
       return res.status(400).json({
         success: false,
         message: "Cart is empty",
-      });
-    }
-
-    // Validate required shipping fields
-    if (!shippingAddress) {
-      return res.status(400).json({
-        success: false,
-        message: "Shipping address is required",
       });
     }
 
@@ -281,6 +274,7 @@ exports.createSimpleOrder = async (req, res) => {
     ];
     for (const field of requiredFields) {
       if (!shippingAddress[field] || shippingAddress[field].trim() === "") {
+        console.error(`❌ Missing field: ${field}`);
         return res.status(400).json({
           success: false,
           message: `Please fill in ${field
@@ -290,11 +284,11 @@ exports.createSimpleOrder = async (req, res) => {
       }
     }
 
-    // Validate phone number
     if (
       shippingAddress.phone.length !== 10 ||
       !/^\d+$/.test(shippingAddress.phone)
     ) {
+      console.error("❌ Invalid phone number:", shippingAddress.phone);
       return res.status(400).json({
         success: false,
         message: "Please enter a valid 10-digit phone number",
@@ -302,50 +296,45 @@ exports.createSimpleOrder = async (req, res) => {
     }
 
     let totalAmount = 0;
-    const validatedItems = [];
 
-    // Process static items (no database validation)
-    for (const item of items) {
-      if (!item.name || !item.price || !item.qty) {
-        return res.status(400).json({
-          success: false,
-          message: `Invalid product data for "${item.name || "unknown"}"`,
-        });
-      }
-
-      if (item.qty < 1) {
-        return res.status(400).json({
-          success: false,
-          message: `Quantity for "${item.name}" must be at least 1`,
-        });
-      }
-
-      totalAmount += item.price * item.qty;
-
-      validatedItems.push({
+    const validatedItems = items.map((item) => {
+      const itemTotal = item.price * item.qty;
+      totalAmount += itemTotal;
+      console.log(`📊 Item: ${item.name} x ${item.qty} = ₹${itemTotal}`);
+      return {
         name: item.name,
         price: item.price,
         qty: item.qty,
         img: item.img || item.image || "",
-      });
-    }
+      };
+    });
 
-    // Add tax (10%) and delivery charge (assuming 40)
     const tax = totalAmount * 0.1;
     const deliveryCharge = 40;
     const grandTotal = totalAmount + tax + deliveryCharge;
 
-    // Create Razorpay order if payment method is razorpay
+    console.log(
+      `💰 Order total: Subtotal=₹${totalAmount}, Tax=₹${tax}, Delivery=₹${deliveryCharge}, Total=₹${grandTotal}`
+    );
+
     let razorpayOrder = null;
+
     if (paymentMethod === "razorpay") {
       try {
+        console.log(
+          `💳 Creating Razorpay order for amount: ₹${grandTotal} (${
+            grandTotal * 100
+          } paise)`
+        );
         razorpayOrder = await razorpay.orders.create({
           amount: Math.round(grandTotal * 100),
           currency: "INR",
           receipt: `receipt_${Date.now()}_${userId.toString().slice(-6)}`,
+          payment_capture: 1,
         });
+        console.log(`✅ Razorpay order created: ${razorpayOrder.id}`);
       } catch (razorpayError) {
-        console.error("Razorpay order creation error:", razorpayError);
+        console.error("❌ Razorpay order creation error:", razorpayError);
         return res.status(500).json({
           success: false,
           message: "Failed to create payment order. Please try again.",
@@ -353,17 +342,16 @@ exports.createSimpleOrder = async (req, res) => {
       }
     }
 
-    // Create order in database
     const order = await Order.create({
       user: userId,
       items: validatedItems,
       shippingAddress,
       totalAmount: grandTotal,
       subtotal: totalAmount,
-      tax: tax,
-      deliveryCharge: deliveryCharge,
+      tax,
+      deliveryCharge,
       paymentMethod: paymentMethod || "razorpay",
-      paymentStatus: paymentMethod === "cod" ? "pending" : "pending",
+      paymentStatus: "pending",
       razorpay: razorpayOrder
         ? {
             orderId: razorpayOrder.id,
@@ -374,6 +362,8 @@ exports.createSimpleOrder = async (req, res) => {
       orderStatus: "created",
     });
 
+    console.log(`✅ Order created in DB: ${order._id}`);
+
     res.status(201).json({
       success: true,
       order,
@@ -381,7 +371,8 @@ exports.createSimpleOrder = async (req, res) => {
       message: "Order created successfully",
     });
   } catch (error) {
-    console.error("Create simple order error:", error);
+    console.error("❌ Create simple order error:", error);
+    console.error("❌ Error stack:", error.stack);
     res.status(500).json({
       success: false,
       message: "Failed to create order",
@@ -395,66 +386,69 @@ exports.createSimpleOrder = async (req, res) => {
 ===================================================== */
 exports.verifyPayment = async (req, res) => {
   try {
-    const { orderId, paymentId, signature, razorpayOrderId } = req.body;
+    console.log("🔍 VERIFY PAYMENT REQUEST:", req.body);
 
-    if (!orderId || !paymentId || !signature || !razorpayOrderId) {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      orderId,
+    } = req.body;
+
+    if (
+      !razorpay_order_id ||
+      !razorpay_payment_id ||
+      !razorpay_signature ||
+      !orderId
+    ) {
+      console.error("❌ Missing payment details");
       return res.status(400).json({
         success: false,
         message: "Missing payment details",
       });
     }
 
-    // Verify Razorpay signature
-    const body = razorpayOrderId + "|" + paymentId;
+    // Generate signature
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_SECRET)
       .update(body)
       .digest("hex");
 
-    const isValidSignature = expectedSignature === signature;
+    console.log(`🔐 Signature verification:
+      Expected: ${expectedSignature.substring(0, 20)}...
+      Received: ${razorpay_signature.substring(0, 20)}...
+      Match: ${expectedSignature === razorpay_signature}`);
 
-    if (!isValidSignature) {
+    if (expectedSignature !== razorpay_signature) {
+      console.error("❌ Invalid payment signature");
       return res.status(400).json({
         success: false,
         message: "Invalid payment signature",
       });
     }
 
-    // Find the order
+    // Find and update order
     const order = await Order.findById(orderId);
+    console.log(`🔍 Found order: ${order ? order._id : "Not found"}`);
 
     if (!order) {
+      console.error("❌ Order not found:", orderId);
       return res.status(404).json({
         success: false,
         message: "Order not found",
       });
     }
 
-    // Check if payment already processed
-    if (order.paymentStatus === "paid") {
-      return res.status(400).json({
-        success: false,
-        message: "Payment already processed",
-      });
-    }
-
-    // Update order payment details
+    // Update order with payment details
     order.paymentStatus = "paid";
-    order.razorpay.paymentId = paymentId;
-    order.razorpay.signature = signature;
+    order.razorpay.paymentId = razorpay_payment_id;
+    order.razorpay.signature = razorpay_signature;
     order.orderStatus = "confirmed";
     order.paidAt = new Date();
 
-    // Reduce stock for database products only
-    for (const item of order.items) {
-      if (item.product && mongoose.Types.ObjectId.isValid(item.product)) {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: { stock: -item.qty },
-        });
-      }
-    }
-
     await order.save();
+    console.log(`✅ Payment verified and order updated: ${order._id}`);
 
     res.json({
       success: true,
@@ -462,7 +456,8 @@ exports.verifyPayment = async (req, res) => {
       message: "Payment verified and order confirmed successfully",
     });
   } catch (error) {
-    console.error("Verify payment error:", error);
+    console.error("❌ Payment verification error:", error);
+    console.error("❌ Error stack:", error.stack);
     res.status(500).json({
       success: false,
       message: "Payment verification failed",
@@ -477,16 +472,18 @@ exports.verifyPayment = async (req, res) => {
 exports.getMyOrders = async (req, res) => {
   try {
     const userId = req.user._id;
+    console.log(`📦 Fetching orders for user: ${userId}`);
 
     const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
 
+    console.log(`✅ Found ${orders.length} orders for user ${userId}`);
     res.json({
       success: true,
       count: orders.length,
       orders,
     });
   } catch (error) {
-    console.error("Get my orders error:", error);
+    console.error("❌ Get my orders error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch orders",
@@ -503,24 +500,27 @@ exports.getOrderById = async (req, res) => {
     const { id } = req.params;
     const userId = req.user._id;
 
+    console.log(`🔍 Fetching order ${id} for user ${userId}`);
     const order = await Order.findOne({
       _id: id,
       user: userId,
     });
 
     if (!order) {
+      console.error(`❌ Order not found: ${id}`);
       return res.status(404).json({
         success: false,
         message: "Order not found",
       });
     }
 
+    console.log(`✅ Order found: ${order._id}`);
     res.json({
       success: true,
       order,
     });
   } catch (error) {
-    console.error("Get order by ID error:", error);
+    console.error("❌ Get order by ID error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch order details",
@@ -534,17 +534,19 @@ exports.getOrderById = async (req, res) => {
 ===================================================== */
 exports.getAllOrders = async (req, res) => {
   try {
+    console.log("👑 Admin fetching all orders");
     const orders = await Order.find()
       .populate("user", "name email phone")
       .sort({ createdAt: -1 });
 
+    console.log(`✅ Found ${orders.length} total orders`);
     res.json({
       success: true,
       count: orders.length,
       orders,
     });
   } catch (error) {
-    console.error("Get all orders error:", error);
+    console.error("❌ Get all orders error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch orders",
@@ -561,7 +563,10 @@ exports.updateOrderStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
+    console.log(`🔄 Updating order ${id} to status: ${status}`);
+
     if (!status) {
+      console.error("❌ Status is required");
       return res.status(400).json({
         success: false,
         message: "Status is required",
@@ -579,6 +584,7 @@ exports.updateOrderStatus = async (req, res) => {
     ];
 
     if (!validStatuses.includes(status)) {
+      console.error(`❌ Invalid status: ${status}`);
       return res.status(400).json({
         success: false,
         message: "Invalid status value",
@@ -588,6 +594,7 @@ exports.updateOrderStatus = async (req, res) => {
     const order = await Order.findById(id);
 
     if (!order) {
+      console.error(`❌ Order not found: ${id}`);
       return res.status(404).json({
         success: false,
         message: "Order not found",
@@ -604,6 +611,7 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     await order.save();
+    console.log(`✅ Order ${id} updated to ${status}`);
 
     res.json({
       success: true,
@@ -611,7 +619,7 @@ exports.updateOrderStatus = async (req, res) => {
       message: `Order status updated to ${status}`,
     });
   } catch (error) {
-    console.error("Update order status error:", error);
+    console.error("❌ Update order status error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to update order status",
@@ -628,12 +636,14 @@ exports.cancelOrder = async (req, res) => {
     const { id } = req.params;
     const userId = req.user._id;
 
+    console.log(`❌ User ${userId} attempting to cancel order ${id}`);
     const order = await Order.findOne({
       _id: id,
       user: userId,
     });
 
     if (!order) {
+      console.error(`❌ Order not found: ${id}`);
       return res.status(404).json({
         success: false,
         message: "Order not found",
@@ -643,6 +653,7 @@ exports.cancelOrder = async (req, res) => {
     // Check if order can be cancelled
     const nonCancellableStatuses = ["delivered", "out-for-delivery"];
     if (nonCancellableStatuses.includes(order.orderStatus)) {
+      console.error(`❌ Cannot cancel order with status: ${order.orderStatus}`);
       return res.status(400).json({
         success: false,
         message: `Cannot cancel order with status: ${order.orderStatus}`,
@@ -650,6 +661,7 @@ exports.cancelOrder = async (req, res) => {
     }
 
     if (order.orderStatus === "cancelled") {
+      console.error(`❌ Order already cancelled: ${id}`);
       return res.status(400).json({
         success: false,
         message: "Order is already cancelled",
@@ -661,6 +673,7 @@ exports.cancelOrder = async (req, res) => {
     order.cancelledAt = new Date();
 
     await order.save();
+    console.log(`✅ Order ${id} cancelled successfully`);
 
     res.json({
       success: true,
@@ -668,7 +681,7 @@ exports.cancelOrder = async (req, res) => {
       message: "Order cancelled successfully",
     });
   } catch (error) {
-    console.error("Cancel order error:", error);
+    console.error("❌ Cancel order error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to cancel order",
@@ -682,6 +695,8 @@ exports.cancelOrder = async (req, res) => {
 ===================================================== */
 exports.getOrderStats = async (req, res) => {
   try {
+    console.log("📊 Getting order statistics");
+
     const totalOrders = await Order.countDocuments();
     const totalRevenue = await Order.aggregate([
       { $match: { paymentStatus: "paid" } },
@@ -699,6 +714,12 @@ exports.getOrderStats = async (req, res) => {
       orderStatus: { $in: ["created", "confirmed", "preparing"] },
     });
 
+    console.log(
+      `📊 Stats: Total=${totalOrders}, Revenue=${
+        totalRevenue[0]?.total || 0
+      }, Today=${todayOrders}, Pending=${pendingOrders}`
+    );
+
     res.json({
       success: true,
       stats: {
@@ -709,7 +730,7 @@ exports.getOrderStats = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Get order stats error:", error);
+    console.error("❌ Get order stats error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch order statistics",

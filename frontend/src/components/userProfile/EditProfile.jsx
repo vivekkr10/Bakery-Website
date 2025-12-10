@@ -68,7 +68,7 @@ export default function EditProfile() {
     try {
       // Update basic profile info
       await axios.put(
-        "http://localhost:5000/api/user/update-profile",
+        `http://localhost:5000/api/user/update-profile/${user._id}`,
         {
           name: form.name,
           username: form.username,
@@ -109,7 +109,6 @@ export default function EditProfile() {
 
       alert("Profile Updated Successfully!");
       navigate("/profile");
-
     } catch (err) {
       console.error(err);
       alert("Error updating profile");
@@ -127,8 +126,9 @@ export default function EditProfile() {
     <div className="bg-[#f8f7f6]">
       <div className="max-w-4xl mx-auto p-6 py-10">
         <div className="bg-white shadow-lg rounded-2xl p-8">
-
-          <h2 className="text-3xl font-bold mb-6 text-gray-900">Edit Profile</h2>
+          <h2 className="text-3xl font-bold mb-6 text-gray-900">
+            Edit Profile
+          </h2>
 
           {/* Profile Image */}
           <div className="flex items-center gap-6 mb-8">
@@ -167,7 +167,9 @@ export default function EditProfile() {
               { label: "Pincode", name: "pincode" },
             ].map((field, index) => (
               <div key={index}>
-                <label className="font-medium text-gray-700">{field.label}</label>
+                <label className="font-medium text-gray-700">
+                  {field.label}
+                </label>
                 <input
                   name={field.name}
                   value={form[field.name]}
@@ -184,7 +186,6 @@ export default function EditProfile() {
           >
             Update Profile
           </button>
-
         </div>
       </div>
     </div>

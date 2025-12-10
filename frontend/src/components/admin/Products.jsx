@@ -14,7 +14,6 @@ const Products = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteProductId, setDeleteProductId] = useState(null);
 
-  // Fetch all products
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -69,7 +68,7 @@ const Products = () => {
   };
 
   return (
-    <div className="p-6 lg:ml-64">
+    <div className="p-6">
       <Toaster position="top-right" />
       <h2 className="text-2xl font-bold mb-4">Products</h2>
 

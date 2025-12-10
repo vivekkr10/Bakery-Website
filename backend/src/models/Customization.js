@@ -15,6 +15,7 @@ const customizationSchema = new mongoose.Schema({
     required: [true, "Please select category"],
     enum: [
       "Size",
+      "Shape",
       "Flavor",
       "Filling",
       "Icing",

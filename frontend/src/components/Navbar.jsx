@@ -88,15 +88,9 @@ const Navbar = () => {
         path: `/menu?category=${encodeURIComponent(cat)}`,
       })),
     },
-    {
-      name: "Categories",
-      dropdown: categories.map((cat) => ({
-        label: cat,
-        path: `/menu?category=${encodeURIComponent(cat)}`,
-      })),
-    },
+    { name: "Custom Cake", path: "/customize" },
     { name: "About", path: "/about" },
-    { name: "Contact", path: "/contact" },
+    { name: "Contact", path: "/contact-us" },
   ];
 
   return (

@@ -200,7 +200,7 @@ const OrderSuccess = () => {
   // Render loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center p-4 pt-40">
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center p-4 pt-32">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 md:h-16 w-12 md:w-16 border-t-2 border-b-2 border-green-600 mb-4 md:mb-6"></div>
           <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">
@@ -261,7 +261,7 @@ const OrderSuccess = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white p-3 sm:p-4 md:p-6 lg:p-8 pt-28 sm:pt-32">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto mt-15">
         {/* Success Header */}
         <div className="text-center mb-6 md:mb-8 lg:mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-green-100 rounded-full mb-4 md:mb-6">

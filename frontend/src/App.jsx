@@ -38,6 +38,7 @@ import Cart from "./components/homePage/Cart";
 import OrderNow from "./components/homePage/OrderNow";
 import OrderSuccess from "./components/homePage/OrderSuccess";
 import FilterPage from "./components/homePage/Filter";
+import CustomCakeBuilder from "./components/homePage/CustomCakeBuilder";
 
 // ---------- ADMIN ----------
 import AdminLogin from "./components/admin/AdminLogin";
@@ -227,6 +228,14 @@ export default function App() {
           element={
             <MainLayout>
               <ProductDetails />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/customize"
+          element={
+            <MainLayout>
+              <CustomCakeBuilder />
             </MainLayout>
           }
         />

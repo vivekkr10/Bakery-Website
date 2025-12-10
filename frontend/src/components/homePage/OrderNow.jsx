@@ -22,6 +22,9 @@ const OrderNow = () => {
     postalCode: "",
   });
 
+  // Razorpay key - hardcoded for now
+  const RAZORPAY_KEY_ID = "rzp_test_Rn3xa74qiaEekq";
+
   useEffect(() => {
     const checkAuth = () => {
       setIsCheckingAuth(true);
@@ -37,9 +40,6 @@ const OrderNow = () => {
         "🔍 Checking authentication - Token found:",
         token ? "Yes" : "No"
       );
-      console.log("LocalStorage token:", localStorage.getItem("token"));
-      console.log("LocalStorage authToken:", localStorage.getItem("authToken"));
-      console.log("SessionStorage token:", sessionStorage.getItem("token"));
 
       if (!token) {
         toast.error("Please login to place an order");
@@ -95,8 +95,6 @@ const OrderNow = () => {
       localStorage.getItem("token") ||
       localStorage.getItem("authToken") ||
       sessionStorage.getItem("token") ||
-      localStorage.getItem("userToken") ||
-      localStorage.getItem("adminToken") ||
       sessionStorage.getItem("authToken");
 
     if (!token) {
@@ -139,7 +137,7 @@ const OrderNow = () => {
         token.substring(0, 20) + "..."
       );
 
-      // First create order in backend
+      // First create order in backend using create-simple endpoint
       const orderRes = await fetch(
         "http://localhost:5000/api/orders/create-simple",
         {
@@ -153,8 +151,7 @@ const OrderNow = () => {
               name: item.name,
               price: item.price,
               qty: item.qty,
-              img: item.image,
-              // Don't send product field since it's not a valid MongoDB ID
+              img: item.image || item.img || "",
             })),
             shippingAddress,
             paymentMethod: "razorpay",
@@ -189,44 +186,39 @@ const OrderNow = () => {
         throw new Error(orderData.message || "Order creation failed");
       }
 
-      // Create Razorpay order
-      console.log("💰 Creating Razorpay order for amount:", grandTotal);
-      const paymentRes = await fetch(
-        "http://localhost:5000/api/payment/create-order",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            amount: grandTotal,
-            currency: "INR",
-            receipt: `order_${orderData.order._id || Date.now()}`,
-          }),
-        }
-      );
-
-      const paymentData = await paymentRes.json();
-      console.log("💳 Razorpay order response:", paymentData);
-
-      if (!paymentData.success) {
-        toast.error(paymentData.message || "Payment initialization failed");
-        return;
+      // Get Razorpay order from response
+      const razorpayOrder = orderData.razorpayOrder;
+      if (!razorpayOrder) {
+        throw new Error("Payment order not created");
       }
 
-      // Razorpay options
+      // Get user email for prefill
+      let userEmail = "";
+      try {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        userEmail = user.email || "";
+      } catch (e) {
+        console.error("Error getting user email:", e);
+      }
+
+      // Load Razorpay script if not already loaded
+      if (!window.Razorpay) {
+        await loadRazorpayScript();
+      }
+
+      // Razorpay options - FIXED: Using hardcoded key
       const options = {
-        key: "rzp_test_Rn3xa74qiaEekq",
-        amount: paymentData.amount,
-        currency: paymentData.currency || "INR",
-        order_id: paymentData.order_id,
+        key: RAZORPAY_KEY_ID,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency || "INR",
+        order_id: razorpayOrder.id,
         name: "My Bakery Store",
         description: "Order Payment",
-        image: "/logo.png", // Use your bakery logo
+        image: "https://cdn.razorpay.com/logos/7K3b6d18wHwKzL_medium.png",
         prefill: {
           name: shippingAddress.name,
           contact: shippingAddress.phone,
-          email: JSON.parse(localStorage.getItem("user") || "{}").email || "",
+          email: userEmail,
         },
         notes: {
           orderId: orderData.order._id,
@@ -235,41 +227,35 @@ const OrderNow = () => {
         theme: {
           color: "#c43b52",
         },
-        modal: {
-          ondismiss: function () {
-            toast.error("Payment cancelled");
-            setLoading(false);
-          },
-        },
         handler: async function (response) {
           console.log("✅ Payment successful, response:", response);
+          setLoading(true); // Show loading again during verification
 
           try {
-            // Verify payment with backend
             const verifyRes = await fetch(
               "http://localhost:5000/api/orders/verify-payment",
               {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                  orderId: orderData.order._id, // Your database order ID
-                  paymentId: response.razorpay_payment_id,
-                  signature: response.razorpay_signature,
-                  razorpayOrderId: response.razorpay_order_id,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  orderId: orderData.order._id,
                 }),
               }
             );
 
             const verifyData = await verifyRes.json();
-            console.log("🔍 Payment verification:", verifyData);
+            console.log("🔍 Payment verification response:", verifyData);
 
             if (verifyData.success) {
               toast.success("Payment Successful! Order confirmed.");
               dispatch(clearCart());
 
-              // Store order data for success page
               const orderDetails = {
                 orderId: orderData.order._id,
                 paymentId: response.razorpay_payment_id,
@@ -281,7 +267,6 @@ const OrderNow = () => {
 
               localStorage.setItem("lastOrder", JSON.stringify(orderDetails));
 
-              // Navigate to success page with query parameters
               navigate(
                 `/order-success?payment_id=${response.razorpay_payment_id}&order_id=${response.razorpay_order_id}&amount=${grandTotal}&db_order_id=${orderData.order._id}`,
                 {
@@ -293,42 +278,80 @@ const OrderNow = () => {
                 "Payment verification failed: " +
                   (verifyData.message || "Unknown error")
               );
+              setLoading(false);
             }
           } catch (verifyError) {
             console.error("❌ Verification error:", verifyError);
             toast.error("Payment verification failed. Please contact support.");
+            setLoading(false);
           }
+        },
+        modal: {
+          ondismiss: function () {
+            console.log("Payment modal dismissed");
+            toast.error("Payment cancelled");
+            setLoading(false);
+          },
         },
       };
 
+      // Add error handling for payment
+      options.modal.ondismiss = function () {
+        toast.error("Payment cancelled");
+        setLoading(false);
+      };
+
       const rzp = new window.Razorpay(options);
-      rzp.open();
 
       // Handle payment failure
       rzp.on("payment.failed", function (response) {
         console.error("❌ Payment failed:", response.error);
         toast.error(
-          `Payment failed: ${response.error.description || "Unknown error"}`
+          `Payment failed: ${
+            response.error.description ||
+            response.error.reason ||
+            "Unknown error"
+          }`
         );
         setLoading(false);
       });
+
+      rzp.open();
     } catch (err) {
       console.error("❌ Payment error:", err);
       toast.error(err.message || "Payment failed. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
 
+  // Function to load Razorpay script
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => {
+        console.log("✅ Razorpay script loaded");
+        resolve();
+      };
+      script.onerror = () => {
+        console.error("❌ Failed to load Razorpay script");
+        toast.error(
+          "Failed to load payment gateway. Please refresh and try again."
+        );
+        resolve();
+      };
+      document.body.appendChild(script);
+    });
+  };
+
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen mt-24 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Checking authentication...</p>
           <button
             onClick={() => {
-              // Force check again
               window.location.reload();
             }}
             className="mt-4 px-4 py-2 text-sm bg-gray-200 rounded-lg hover:bg-gray-300"
@@ -342,7 +365,7 @@ const OrderNow = () => {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen mt-24 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-semibold text-gray-700">
             Your cart is empty
@@ -361,7 +384,7 @@ const OrderNow = () => {
 
   if (!userToken) {
     return (
-      <div className="min-h-screen mt-24 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-semibold text-gray-700">
             Authentication Required
@@ -389,7 +412,7 @@ const OrderNow = () => {
   }
 
   return (
-    <div className="min-h-screen mt-24 bg-gray-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">
           Complete Your Order
@@ -571,6 +594,16 @@ const OrderNow = () => {
                     {JSON.parse(localStorage.getItem("user") || "{}").name ||
                       "User"}
                   </span>
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  Using token: {userToken ? "✓ Valid" : "✗ Invalid"}
+                </p>
+              </div>
+
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-700">
+                  💡 Tip: Make sure Razorpay script is loaded. If payment
+                  doesn't open, refresh the page.
                 </p>
               </div>
             </div>
