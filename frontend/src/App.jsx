@@ -13,7 +13,7 @@ import ProtectedRoutes from "./components/ProtectedRoutes";
 
 // ---------- PUBLIC PAGES ----------
 import Homepage from "./components/homePage/Homepage";
-import About from "./components/About/About";
+import About from "./components/about/About";
 import ContactUs from "./components/ContactUs";
 
 // ---------- USER AUTH ----------
