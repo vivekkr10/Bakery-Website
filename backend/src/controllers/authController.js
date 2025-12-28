@@ -10,7 +10,11 @@ const generateOTP = require("../utils/generateOTP");
 
 /* ================= REGISTER ================= */
 exports.register = async (req, res) => {
-  const { name, email, password, phone } = req.body;
+  let { name, email, password, phone } = req.body;
+
+  if (email) {
+    email = email.toLowerCase().trim();
+  }
 
   try {
     const existing = await User.findOne({ $or: [{ email }, { phone }] });
@@ -78,7 +82,7 @@ exports.verifyOtp = async (req, res) => {
         message: "OTP required",
       });
     }
-
+    console.log("VERIFY BODY:", req.body);
     // 🔥 Normalize OTP
     const normalizedOtp = String(otp).trim();
 
@@ -243,32 +247,49 @@ exports.login = async (req, res) => {
 
 /* ================= FORGOT PASSWORD ================= */
 exports.forgotPassword = async (req, res) => {
-  const { email } = req.body;
+  try {
+    let { email } = req.body;
 
-  const user = await User.findOne({ email });
-  if (!user)
-    return res.status(404).json({ success: false, message: "User not found" });
+    if (email) {
+      email = email.toLowerCase().trim();
+    }
 
-  const otp = generateOTP();
+    const user = await User.findOne({ email });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
-  await Otp.create({
-    email,
-    code: otp,
-    purpose: "forgot-password",
-    expiresAt: Date.now() + 5 * 60 * 1000,
-  });
+    const otp = generateOTP();
 
-  const sent = await sendOTPEmail(email, otp);
+    // delete old OTPs for this email
+    await Otp.deleteMany({ email, purpose: "forgot-password" });
 
-  if (!sent) {
-    return res.status(200).json({
-      success: true,
-      message:
-        "We generated your OTP, but email delivery is temporarily unavailable. Please try again in a few minutes.",
+    console.log("CREATING FORGOT OTP:", email, otp);
+
+    // SAVE FIRST (IMPORTANT)
+    await Otp.create({
+      email,
+      code: otp,
+      purpose: "forgot-password",
+      expiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
     });
-  }
 
-  res.json({ success: true, message: "OTP sent" });
+    // SEND EMAIL AFTER SAVING
+    const sent = await sendOTPEmail(email, otp);
+    if (!sent) {
+      return res.status(200).json({
+        success: true,
+        message:
+          "OTP generated, but email delivery is delayed. Please check again shortly.",
+      });
+    }
+
+    res.json({ success: true, message: "OTP sent successfully" });
+  } catch (err) {
+    console.error("FORGOT PASSWORD ERROR:", err);
+    res.status(500).json({ success: false, message: "Failed to send OTP" });
+  }
 };
 
 /* ================= RESET PASSWORD ================= */

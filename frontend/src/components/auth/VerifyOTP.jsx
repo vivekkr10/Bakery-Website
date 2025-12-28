@@ -128,6 +128,7 @@ const VerifyOTP = () => {
         email: userDetails.email || undefined,
         phone: userDetails.phone || undefined,
         otp: otpString,
+        purpose: "register",
       };
 
       console.log("🔄 Verifying OTP for:", userDetails.email);
