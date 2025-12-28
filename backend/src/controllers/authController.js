@@ -79,17 +79,19 @@ exports.verifyOtp = async (req, res) => {
       });
     }
 
+    // 🔥 Normalize OTP
+    const normalizedOtp = String(otp).trim();
+
     const query = {
-      code: String(otp),
+      code: normalizedOtp,
       expiresAt: { $gt: Date.now() },
     };
 
-    // 🔥 MOST IMPORTANT FIX
-    if (email) query.email = email;
-    // if (phone) query.phone = phone;
+    if (email) query.email = email.toLowerCase().trim();
+    if (purpose) query.purpose = purpose.trim();
 
-    // purpose optional rakho
-    if (purpose) query.purpose = purpose;
+    // 🔍 DEBUG (temporary)
+    console.log("OTP VERIFY QUERY:", query);
 
     const record = await Otp.findOne(query).sort({ createdAt: -1 });
 
@@ -184,28 +186,59 @@ exports.setUsername = async (req, res) => {
   }
 };
 
-/* ================= LOGIN ================= */
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
+  // 🔥 EXTRA SAFETY (VERY IMPORTANT)
+  if (!email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: "Email and password are required",
+    });
+  }
+
   const user = await User.findOne({ email }).select("+password");
-  if (!user)
-    return res.status(404).json({ success: false, message: "User not found" });
 
-  if (user.isBlocked)
-    return res.status(403).json({ success: false, message: "Account blocked" });
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: "User not found",
+    });
+  }
 
-  const match = await bcrypt.compare(password, user.password);
-  if (!match)
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid credentials" });
+  if (user.isBlocked) {
+    return res.status(403).json({
+      success: false,
+      message: "Account blocked",
+    });
+  }
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
+  // ✅ MODEL METHOD USE (MAIN FIX)
+  const isMatch = await user.comparePassword(String(password));
+  if (!isMatch) {
+    return res.status(400).json({
+      success: false,
+      message: "Incorrect password",
+    });
+  }
+
+  const token = user.generateJWT();
+
+  res.cookie("userToken", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  res.json({ success: true, token, user });
+  user.password = undefined;
+
+  res.json({
+    success: true,
+    message: "Login successful",
+    token,
+    user,
+  });
 };
 
 /* ================= FORGOT PASSWORD ================= */

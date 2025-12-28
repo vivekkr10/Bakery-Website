@@ -25,17 +25,17 @@ export default function FilterPage() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
-const getAuthRole = () => {
-  if (localStorage.getItem("userToken")) return "user";
-  if (localStorage.getItem("adminToken")) return "admin";
-  return null;
-};
+  const getAuthRole = () => {
+    if (localStorage.getItem("userToken")) return "user";
+    if (localStorage.getItem("adminToken")) return "admin";
+    return null;
+  };
 
   // ✅ FIXED LINE (ONLY CHANGE)
   const [categories, setCategories] = useState([]);
 
   const [flavors, setFlavors] = useState([]);
- const [weights, setWeights] = useState([]);
+  const [weights, setWeights] = useState([]);
 
   const [priceRange, setPriceRange] = useState([0, 10000]);
   const [maxPrice, setMaxPrice] = useState(10000);
@@ -45,20 +45,19 @@ const getAuthRole = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductModal, setShowProductModal] = useState(false);
 
-
   // ⬇️⬇️⬇️
   // EVERYTHING BELOW THIS IS 100% YOUR ORIGINAL CODE
   // NOTHING ELSE TOUCHED
   // ⬇️⬇️⬇️
-// useEffect(() => {
-//   fetch("/api/product/weights")
-//     .then(res => res.json())
-//     .then(data => {
-//       if (data.success) {
-//         setWeights(data.weights);
-//       }
-//     });
-// }, []);
+  // useEffect(() => {
+  //   fetch("/api/product/weights")
+  //     .then(res => res.json())
+  //     .then(data => {
+  //       if (data.success) {
+  //         setWeights(data.weights);
+  //       }
+  //     });
+  // }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -85,12 +84,12 @@ const getAuthRole = () => {
         if (res.data.success) {
           setFeaturedProducts(res.data.products || []);
         }
-        console.log(res.data.products)
+        console.log(res.data.products);
       } catch (error) {
         console.error("Failed to fetch featured products:", error);
       }
     };
-    
+
     fetchFeatured();
   }, []);
 
@@ -122,18 +121,14 @@ const getAuthRole = () => {
   }, []);
 
   useEffect(() => {
-  if (!allProducts || allProducts.length === 0) return;
+    if (!allProducts || allProducts.length === 0) return;
 
-  const uniqueWeights = [
-    ...new Set(
-      allProducts
-        .map((p) => p.weight)
-        .filter(Boolean)
-    ),
-  ];
+    const uniqueWeights = [
+      ...new Set(allProducts.map((p) => p.weight).filter(Boolean)),
+    ];
 
-  setWeights(uniqueWeights);
-}, [allProducts]);
+    setWeights(uniqueWeights);
+  }, [allProducts]);
 
   // Apply filters and sorting
   useEffect(() => {
@@ -250,79 +245,77 @@ const getAuthRole = () => {
     }));
   };
 
-const handleAddToCart = (e, product) => {
-  if (e?.preventDefault) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
+  const handleAddToCart = (e, product) => {
+    if (e?.preventDefault) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
 
-  const role = getAuthRole();
+    const role = getAuthRole();
 
-  if (!role) {
-    toast.error("Please login to continue");
-    navigate("/login");
-    return;
-  }
+    if (!role) {
+      toast.error("Please login to continue");
+      navigate("/login");
+      return;
+    }
 
-  if (role === "admin") {
-    toast.error("Admins cannot add products to cart");
-    navigate("/admin/dashboard");
-    return;
-  }
+    if (role === "admin") {
+      toast.error("Admins cannot add products to cart");
+      navigate("/admin/dashboard");
+      return;
+    }
 
-  dispatch(
-    addToCart({
-      id: product._id,
-      name: product.name,
-      price: product.price,
-      image: getImageUrl(product.images?.[0]),
-      qty: 1,
-    })
-  );
+    dispatch(
+      addToCart({
+        id: product._id,
+        name: product.name,
+        price: product.price,
+        image: getImageUrl(product.images?.[0]),
+        qty: 1,
+      })
+    );
 
-  toast.success(`${product.name} added to cart`);
-};
+    toast.success(`${product.name} added to cart`);
+  };
 
+  const handleBuyNow = (e, product) => {
+    if (e?.preventDefault) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
 
-const handleBuyNow = (e, product) => {
-  if (e?.preventDefault) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
+    const role = getAuthRole();
 
-  const role = getAuthRole();
+    if (!role) {
+      toast.error("Please login to continue");
+      navigate("/login");
+      return;
+    }
 
-  if (!role) {
-    toast.error("Please login to continue");
-    navigate("/login");
-    return;
-  }
+    // 🚫 Admin should not checkout
+    if (role === "admin") {
+      toast.error("Admins cannot place orders");
+      navigate("/admin/dashboard"); // or "/admin/products"
+      return;
+    }
 
-  // 🚫 Admin should not checkout
-  if (role === "admin") {
-    toast.error("Admins cannot place orders");
-    navigate("/admin/dashboard"); // or "/admin/products"
-    return;
-  }
+    if (product.stock <= 0) {
+      toast.error("This product is out of stock");
+      return;
+    }
 
-  if (product.stock <= 0) {
-    toast.error("This product is out of stock");
-    return;
-  }
+    dispatch(
+      addToCart({
+        id: product._id,
+        name: product.name,
+        price: product.price,
+        image: getImageUrl(product.images?.[0]),
+        qty: 1,
+      })
+    );
 
-  dispatch(
-    addToCart({
-      id: product._id,
-      name: product.name,
-      price: product.price,
-      image: getImageUrl(product.images?.[0]),
-      qty: 1,
-    })
-  );
-
-  navigate("/order");
-};
-
+    navigate("/order");
+  };
 
   const handleProductClick = (product) => {
     setSelectedProduct(product);
@@ -351,20 +344,19 @@ const handleBuyNow = (e, product) => {
     }, 5000);
   };
 
- const getImageUrl = (image) => {
-  if (!image) return "/images/no-image.png";
+  const getImageUrl = (image) => {
+    if (!image) return "/images/no-image.png";
 
-  if (Array.isArray(image)) {
-    const first = image[0];
-    if (!first) return "/images/no-image.png";
-    if (first.startsWith("http")) return first;
-    return first.startsWith("/") ? first : `/${first}`;
-  }
+    if (Array.isArray(image)) {
+      const first = image[0];
+      if (!first) return "/images/no-image.png";
+      if (first.startsWith("http")) return first;
+      return first.startsWith("/") ? first : `/${first}`;
+    }
 
-  if (image.startsWith("http")) return image;
-  return image.startsWith("/") ? image : `/${image}`;
-};
-
+    if (image.startsWith("http")) return image;
+    return image.startsWith("/") ? image : `/${image}`;
+  };
 
   if (loading) {
     return (
@@ -387,7 +379,7 @@ const handleBuyNow = (e, product) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#fff9f4]">
+    <div className="min-h-screen bg-[#fff9f4] overflow-x-hidden">
       {/* Hero Video Section */}
       <section className="relative w-full min-h-[70vh] md:min-h-[60vh] overflow-hidden pt-20 pb-10">
         <video
@@ -479,17 +471,18 @@ const handleBuyNow = (e, product) => {
                   <div className="grid md:grid-cols-2 gap-0">
                     {/* Image */}
                     <div className="h-56 sm:h-64 md:h-80 bg-gradient-to-br from-[#fff9f4] to-[#f0e3d6] overflow-hidden">
-  <img
-    src={getImageUrl(featuredProducts[currentSlide]?.images?.[0])}
-    alt={featuredProducts[currentSlide]?.name}
-    className="w-full h-full object-cover"
-    onError={(e) => {
-      e.target.onerror = null;
-      e.target.src = "/images/no-image.png";
-    }}
-  />
-</div>
-
+                      <img
+                        src={getImageUrl(
+                          featuredProducts[currentSlide]?.images?.[0]
+                        )}
+                        alt={featuredProducts[currentSlide]?.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "/images/no-image.png";
+                        }}
+                      />
+                    </div>
 
                     {/* Content */}
                     <div className="p-5 sm:p-7 md:p-10 flex flex-col justify-center">
@@ -751,46 +744,44 @@ const handleBuyNow = (e, product) => {
               </div>
 
               {/* Weight Filter - Buttons */}
-{/* WEIGHT FILTER */}
-<div className="mb-5">
-  <label className="block text-sm font-semibold text-gray-700 mb-2.5">
-    Weight
-  </label>
+              {/* WEIGHT FILTER */}
+              <div className="mb-5">
+                <label className="block text-sm font-semibold text-gray-700 mb-2.5">
+                  Weight
+                </label>
 
-  <div className="flex flex-wrap gap-2">
-    <button
-      onClick={() => handleFilterChange("weight", "")}
-      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-        filters.weight === ""
-          ? "bg-[#d78f52] text-white shadow-md"
-          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
-      }`}
-    >
-      All
-    </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => handleFilterChange("weight", "")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      filters.weight === ""
+                        ? "bg-[#d78f52] text-white shadow-md"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
+                    }`}
+                  >
+                    All
+                  </button>
 
-    {weights.map((weight) => (
-      <button
-        key={weight}
-        onClick={() =>
-          handleFilterChange(
-            "weight",
-            filters.weight === weight ? "" : weight
-          )
-        }
-        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-          filters.weight === weight
-            ? "bg-[#d78f52] text-white shadow-md"
-            : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
-        }`}
-      >
-        {weight}
-      </button>
-    ))}
-  </div>
-</div>
-
-
+                  {weights.map((weight) => (
+                    <button
+                      key={weight}
+                      onClick={() =>
+                        handleFilterChange(
+                          "weight",
+                          filters.weight === weight ? "" : weight
+                        )
+                      }
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        filters.weight === weight
+                          ? "bg-[#d78f52] text-white shadow-md"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
+                      }`}
+                    >
+                      {weight}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {/* Flavor Filter - Buttons */}
               <div className="mb-5">
@@ -919,8 +910,8 @@ const handleBuyNow = (e, product) => {
                         {/* LEFT BUTTON */}
                         <button
                           onClick={() => scrollCategory(category, "left")}
-                          className="md:flex absolute -left-4 md:-left-6 lg:-left-8 top-1/2 -translate-y-1/2 
-               bg-white shadow-lg p-2 rounded-full z-10"
+                          className="hidden md:flex absolute -left-6 lg:-left-8 top-1/2 -translate-y-1/2 
+             bg-white shadow-lg p-2 rounded-full z-10"
                         >
                           <FaChevronLeft className="text-[#8b5e3c]" />
                         </button>
@@ -928,7 +919,8 @@ const handleBuyNow = (e, product) => {
                         {/* HORIZONTAL SCROLL CONTAINER */}
                         <div
                           id={`scroll-${category}`}
-                          className="flex gap-6 w-full max-w-full overflow-x-hidden"
+                          className="flex gap-6 w-full max-w-full overflow-x-auto pb-4 scroll-smooth
+             scrollbar-thin scrollbar-thumb-[#d78f52] scrollbar-track-[#f5e6d6]"
                         >
                           {products.map((product) => (
                             <motion.div
@@ -941,15 +933,15 @@ const handleBuyNow = (e, product) => {
 
                               <div className="flex-shrink-0">
                                 <div className="relative h-40 overflow-hidden bg-gradient-to-br from-[#f0e3d6] to-[#fff9f4]">
-<img
-  src={getImageUrl(product.images?.[0])}
-  alt={product.name}
-  className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-  onError={(e) => {
-    e.target.onerror = null;
-    e.target.src = "/images/no-image.png";
-  }}
-/>
+                                  <img
+                                    src={getImageUrl(product.images?.[0])}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                                    onError={(e) => {
+                                      e.target.onerror = null;
+                                      e.target.src = "/images/no-image.png";
+                                    }}
+                                  />
 
                                   {product.isFeatured && (
                                     <span className="absolute top-2 right-2 bg-[#8b5e3c] text-white text-xs font-bold px-2 py-1 rounded-full">
@@ -1015,8 +1007,8 @@ const handleBuyNow = (e, product) => {
                         {/* RIGHT BUTTON */}
                         <button
                           onClick={() => scrollCategory(category, "right")}
-                          className="md:flex absolute -right-4 md:-right-6 lg:-right-8 top-1/2 -translate-y-1/2 
-               bg-white shadow-lg p-2 rounded-full z-10"
+                          className="hidden md:flex absolute -left-6 lg:-left-8 top-1/2 -translate-y-1/2 
+             bg-white shadow-lg p-2 rounded-full z-10"
                         >
                           <FaChevronRight className="text-[#8b5e3c]" />
                         </button>
@@ -1056,14 +1048,14 @@ const handleBuyNow = (e, product) => {
                 {/* Image Section */}
                 <div className="relative h-64 md:h-full min-h-[300px] max-h-full overflow-hidden bg-gradient-to-br from-[#fff9f4] to-[#f0e3d6]">
                   <img
-  src={getImageUrl(selectedProduct.images)}
-  alt={selectedProduct.name}
-  className="absolute inset-0 w-full h-full object-cover object-center"
-  onError={(e) => {
-    e.target.onerror = null;
-    e.target.src = "/images/no-image.png";
-  }}
-/>
+                    src={getImageUrl(selectedProduct.images)}
+                    alt={selectedProduct.name}
+                    className="absolute inset-0 w-full h-full object-cover object-center"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "/images/no-image.png";
+                    }}
+                  />
 
                   {selectedProduct.isFeatured && (
                     <span className="absolute top-4 right-4 bg-[#8b5e3c] text-white text-xs font-bold px-3 py-1.5 rounded-full">

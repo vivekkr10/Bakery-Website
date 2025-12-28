@@ -39,22 +39,18 @@ const Products = () => {
     fetchProducts();
   }, []);
 
-const handleSaveProduct = () => {
-  toast.success("Product added successfully!");
-  fetchProducts(); // ✅ always correct, fresh data
-};
-
+  const handleSaveProduct = () => {
+    toast.success("Product added successfully!");
+    fetchProducts(); // ✅ always correct, fresh data
+  };
 
   const handleDeleteProduct = async () => {
     try {
       const token = localStorage.getItem("adminToken");
 
-      await axios.delete(
-        `/api/admin/product/${deleteProductId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      await axios.delete(`/api/admin/product/${deleteProductId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       setProducts((prev) => prev.filter((p) => p._id !== deleteProductId));
       setShowDeleteModal(false);
@@ -79,70 +75,72 @@ const handleSaveProduct = () => {
         + Add New Product
       </button>
 
-      <div className="bg-white p-4 rounded-xl shadow overflow-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-[#f7e8dc] text-[#3f2e20]">
-              <th className="py-4 px-5 text-left font-semibold">Product</th>
-              <th className="py-4 px-5 text-left font-semibold">Category</th>
-              <th className="py-4 px-5 text-left font-semibold">Price</th>
-              <th className="py-4 px-5 text-left font-semibold">Stock</th>
-              <th className="py-4 px-5 text-left font-semibold">Action</th>
-            </tr>
-          </thead>
+      <div className="bg-white p-4 rounded-xl shadow">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[800px] border-collapse overflow-x-auto">
+            <thead>
+              <tr className="bg-[#f7e8dc] text-[#3f2e20]">
+                <th className="py-4 px-5 text-left font-semibold">Product</th>
+                <th className="py-4 px-5 text-left font-semibold">Category</th>
+                <th className="py-4 px-5 text-left font-semibold">Price</th>
+                <th className="py-4 px-5 text-left font-semibold">Stock</th>
+                <th className="py-4 px-5 text-left font-semibold">Action</th>
+              </tr>
+            </thead>
 
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan="5" className="text-center py-5">
-                  Loading...
-                </td>
-              </tr>
-            ) : error ? (
-              <tr>
-                <td colSpan="5" className="text-center py-5 text-red-500">
-                  {error}
-                </td>
-              </tr>
-            ) : products.length === 0 ? (
-              <tr>
-                <td colSpan="5" className="text-center py-5">
-                  No products found
-                </td>
-              </tr>
-            ) : (
-              products.map((p) => (
-                <tr key={p._id} className="hover:bg-gray-50 text-[#3f2e20]">
-                  <td className="py-4 px-5">{p.name}</td>
-                  <td>{p.category}</td>
-                  <td>₹{p.price}</td>
-                  <td>{p.stock}</td>
-                  <td>
-                    <button
-                      onClick={() => {
-                        setSelectedProductId(p._id);
-                        setShowUpdateModal(true);
-                      }}
-                      className="px-3 py-2 bg-yellow-400 hover:bg-yellow-600 rounded mr-2"
-                    >
-                      Update
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setDeleteProductId(p._id);
-                        setShowDeleteModal(true);
-                      }}
-                      className="px-3 py-2 bg-red-400 hover:bg-red-600 text-white rounded"
-                    >
-                      Delete
-                    </button>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="5" className="text-center py-5">
+                    Loading...
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : error ? (
+                <tr>
+                  <td colSpan="5" className="text-center py-5 text-red-500">
+                    {error}
+                  </td>
+                </tr>
+              ) : products.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="text-center py-5">
+                    No products found
+                  </td>
+                </tr>
+              ) : (
+                products.map((p) => (
+                  <tr key={p._id} className="hover:bg-gray-50 text-[#3f2e20]">
+                    <td className="py-4 px-5">{p.name}</td>
+                    <td>{p.category}</td>
+                    <td>₹{p.price}</td>
+                    <td>{p.stock}</td>
+                    <td>
+                      <button
+                        onClick={() => {
+                          setSelectedProductId(p._id);
+                          setShowUpdateModal(true);
+                        }}
+                        className="px-3 py-2 bg-yellow-400 hover:bg-yellow-600 rounded mr-2"
+                      >
+                        Update
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setDeleteProductId(p._id);
+                          setShowDeleteModal(true);
+                        }}
+                        className="px-3 py-2 bg-red-400 hover:bg-red-600 text-white rounded"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* CREATE PRODUCT MODAL */}
