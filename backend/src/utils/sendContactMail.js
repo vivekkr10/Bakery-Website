@@ -1,43 +1,56 @@
-const nodemailer = require("nodemailer");
+const axios = require("axios");
 
 const sendContactMail = async ({ name, email, message }) => {
   try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp-relay.brevo.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-      connectionTimeout: 20000,
-    });
+    const response = await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      {
+        sender: {
+          email: process.env.FROM_EMAIL,
+          name: "Bakery Website",
+        },
 
-    const mailOptions = {
-      from: `"Bakery Website" <${process.env.FROM_EMAIL}>`,
-      to: process.env.FROM_EMAIL,
-      subject: "📩 New Contact Message",
-      html: `
-        <div style="font-family:Arial; padding:20px;">
-          <h2>New Contact Message</h2>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Message:</strong></p>
-          <p style="background:#f5f5f5;padding:10px;border-radius:6px;">
-            ${message}
-          </p>
-        </div>
-      `,
-    };
+        to: [
+          {
+            email: process.env.FROM_EMAIL,   // admin receives
+            name: "Bakery Admin",
+          },
+        ],
 
-    await transporter.sendMail(mailOptions);
-    console.log("✅ Contact email sent");
+        replyTo: { email },
+
+        subject: "📩 New Contact Message",
+
+        htmlContent: `
+          <div style="font-family:Arial; padding:20px;">
+            <h2>New Contact Message</h2>
+
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+
+            <p><strong>Message:</strong></p>
+            <p style="background:#f5f5f5;padding:10px;border-radius:6px;">
+              ${message}
+            </p>
+          </div>
+        `,
+      },
+      {
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("✅ Brevo contact email sent:", response.data);
+    return true;
   } catch (err) {
-    console.error("❌ Contact Mail Error:", err);
-    throw err;
+    console.error(
+      "❌ Brevo Contact Error:",
+      err.response?.data || err.message
+    );
+    return false;
   }
 };
 
