@@ -23,13 +23,10 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        "/api/admin/login",
-        {
-          email: form.email,
-          password: form.password,
-        }
-      );
+      const response = await axios.post("/api/admin/login", {
+        email: form.email,
+        password: form.password,
+      });
 
       // Save token + admin info
       localStorage.setItem("adminToken", response.data.token);
@@ -109,7 +106,7 @@ const AdminLogin = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#dfa26d] text-white font-semibold py-3 rounded-lg shadow-md hover:bg-[#e6b07c] transition-all duration-300 disabled:opacity-60"
+          className="w-full font-semibold py-3 rounded-lg shadow-md transition-all duration-300 disabled:opacity-60 mb-3 bg-[#c85a31] hover:bg-[#b34a22] text-white"
         >
           {loading ? "Logging in..." : "Login as Admin"}
         </button>

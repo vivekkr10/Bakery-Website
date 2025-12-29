@@ -1,52 +1,81 @@
-import React from 'react'
-import { Cell, Pie, PieChart, Tooltip } from 'recharts';
+import React, { useEffect, useRef, useState } from "react";
+import { Cell, Pie, PieChart, Tooltip, ResponsiveContainer } from "recharts";
 
 const OrdersPieChart = () => {
-    const colors = ["#ffb07c", "#d69e64", "#ed598a"];
+  const containerRef = useRef(null);
+  const [isCompact, setIsCompact] = useState(false);
 
-    const data = [
-        { name: "Pending", value: 2 },
-        { name: "Completed", value: 2 },
-        { name: "Cancelled", value: 1 },
-    ];
+  const colors = ["#ffb07c", "#d69e64", "#ed598a"];
 
-    return (
-        <div className="bg-[#fff9f4] p-5 rounded-xl shadow">
-            <h3 className="text-lg font-semibold mb-3 text-[#6f482a]">Daily Order Status</h3>
-            <div className="flex justify-center">
-                <PieChart width={340} height={260}>
-                    <Pie
-                        data={data}
-                        dataKey="value"
-                        nameKey="name"
-                        outerRadius={100}
-                        innerRadius={50}
-                        paddingAngle={3}
-                    >
+  const data = [
+    { name: "Pending", value: 2 },
+    { name: "Completed", value: 2 },
+    { name: "Cancelled", value: 1 },
+  ];
 
-                        {data.map((entry, i) => (
-                            <Cell key={i} fill={colors[i]} />
-                        ))}
-                    </Pie>
-                    <Tooltip />
-                </PieChart>
-            </div>
+  // 🔥 REAL RESPONSIVENESS (container based)
+  useEffect(() => {
+    if (!containerRef.current) return;
 
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0].contentRect.width;
+      setIsCompact(width < 360); // 👈 real breakpoint
+    });
 
-            <div className="mt-4 flex justify-around text-sm">
-                {data.map((item, i) => (
-                    <div className="flex items-center gap-2" key={i}>
-                        <span
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: colors[i] }}
-                        ></span>
-                        <span className="text-gray-600">{item.name}</span>
-                    </div>
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="bg-[#fff9f4] p-4 rounded-xl shadow w-full"
+    >
+      <h3 className="text-sm sm:text-lg font-semibold mb-2 text-[#6f482a] text-center sm:text-left">
+        Daily Order Status
+      </h3>
+
+      {/* CHART */}
+      <div className="w-full flex justify-center">
+        <div
+          className={`${
+            isCompact ? "w-[260px] h-[220px]" : "w-full h-[240px]"
+          }`}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="name"
+                outerRadius={isCompact ? "65%" : "75%"}
+                innerRadius={isCompact ? "40%" : "45%"}
+                paddingAngle={3}
+              >
+                {data.map((_, i) => (
+                  <Cell key={i} fill={colors[i]} />
                 ))}
-            </div>
-
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
-    )
-}
+      </div>
 
-export default OrdersPieChart
+      {/* LEGEND */}
+      <div className="mt-3 flex flex-wrap justify-center gap-3 text-xs">
+        {data.map((item, i) => (
+          <div className="flex items-center gap-1" key={i}>
+            <span
+              className="w-2.5 h-2.5 rounded-full"
+              style={{ backgroundColor: colors[i] }}
+            />
+            <span className="text-gray-600">{item.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default OrdersPieChart;
